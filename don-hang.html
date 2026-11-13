@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <script>
+        window.location.replace("/Order/DonHang");
+    </script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đơn hàng - Gift Shop</title>
+    <link href="css/style.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="header"></div>
+
+    <div class="vung">
+        <h2 class="tieude">Đơn hàng của tôi</h2>
+        <div id="ds"></div>
+    </div>
+
+    <div id="footer"></div>
+
+    <script src="js/main.js"></script>
+    <script>
+        var u = nguoiDangNhap();
+        if (!u) {
+            document.getElementById("ds").innerHTML =
+                '<p style="margin-bottom:12px;">Vui lòng đăng nhập để xem đơn hàng.</p><a class="nut" href="dang-nhap.html?next=don-hang.html">Đăng nhập</a>';
+        } else {
+            var tatCa = doc("donHang", []);
+            var h = "";
+            for (var i = tatCa.length - 1; i >= 0; i--) {
+                var d = tatCa[i];
+                if (d.email != u.email) continue;
+                h += '<div class="donhang"><h3>Đơn ' + d.ma + '<span class="trangthai">Đang xử lý</span></h3>' +
+                    '<p>Ngày đặt: ' + d.ngay + '<br>Người nhận: ' + an(d.ten) + ' - ' + an(d.sdt) +
+                    '<br>Địa chỉ: ' + an(d.diaChi) + '<br>Thanh toán: ' + d.thanhToan + '</p>' +
+                    '<table class="bang"><tr><th>Sản phẩm</th><th>Đơn giá</th><th>Số lượng</th></tr>';
+                for (var j = 0; j < d.chiTiet.length; j++) {
+                    h += '<tr><td>' + d.chiTiet[j].ten + '</td><td>' + dinhDang(d.chiTiet[j].gia) + '</td><td>' + d.chiTiet[j].sl + '</td></tr>';
+                }
+                h += '</table>';
+                if (d.tam !== undefined) {
+                    h += '<p style="text-align:right;">Tạm tính: ' + dinhDang(d.tam) + ' | Phí ship: ' + (d.phi == 0 ? "Miễn phí" : dinhDang(d.phi)) + ' | Giảm giá: -' + dinhDang(d.giam) + '</p>';
+                }
+                h += '<div class="tong">Tổng: ' + dinhDang(d.tong) + '</div></div>';
+            }
+            if (h == "") h = "<p>Bạn chưa có đơn hàng nào.</p>";
+            document.getElementById("ds").innerHTML = h;
+        }
+    </script>
+</body>
+</html>

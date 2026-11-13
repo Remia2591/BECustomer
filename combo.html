@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Combo - Gift Shop</title>
+    <link href="css/style.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="header"></div>
+
+    <div class="duongdan"><a href="index.html">TRANG CHỦ</a> &gt; <b>COMBO TIẾT KIỆM</b></div>
+
+    <div class="vung">
+        <h2 class="tieude">Combo tiết kiệm</h2>
+        <p style="margin-bottom:18px;color:#555;">Mua theo combo tiết kiệm hơn đến 25% so với mua lẻ. Bấm vào combo để xem chi tiết từng món bên trong.</p>
+        <div id="dsMoTa"></div>
+        <div class="luoi" id="ds"></div>
+    </div>
+
+    <div id="footer"></div>
+
+    <script src="js/main.js"></script>
+    <script>
+        function veComboSQL() {
+            var combo = layDS(true);
+            var h = "";
+
+            for (var i = 0; i < combo.length; i++) {
+                var s = combo[i];
+
+                h += '<div class="hop-ct" style="margin-bottom:12px;background:#fafafa;">' +
+                    '<b style="color:#c92127;font-size:17px;">' +
+                    an(s.ten || "") + '</b>';
+
+                if (s.mota) {
+                    h += ': ' + an(s.mota);
+                }
+
+                if (s.comboGom) {
+                    h += '<br><small style="color:#666;">Gồm: ' +
+                        an(s.comboGom) + '</small>';
+                }
+
+                h += '</div>';
+            }
+
+            document.getElementById("dsMoTa").innerHTML =
+                h || "<p>Hiện chưa có combo nào.</p>";
+
+            if (combo.length > 0) {
+                veSP(combo, "ds");
+            } else {
+                document.getElementById("ds").innerHTML = "";
+            }
+        }
+
+        document.getElementById("dsMoTa").innerHTML =
+            "<p>Đang tải danh sách combo...</p>";
+
+        document.addEventListener("sanpham-da-tai", veComboSQL);
+    </script>
+</body>
+</html>

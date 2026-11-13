@@ -1,0 +1,231 @@
+@model html.Models.SanPham
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chi tiết sản phẩm - Gift Shop</title>
+    <link href="@Url.Content("~/css/style.css")" rel="stylesheet" />
+</head>
+<body>
+    <div id="header"></div>
+
+    <div class="duongdan"><a href="@Url.Content("~/index.html")">TRANG CHỦ</a> &gt; <span id="duongLoai"></span> &gt; <b id="duongTen"></b></div>
+
+    <div class="wrap" id="chiTiet"></div>
+
+    <div class="vung-sp">
+        <h2 class="tieude">Sản phẩm cùng loại</h2>
+        <div class="luoi" id="lienQuan"></div>
+    </div>
+
+    <div id="footer"></div>
+
+    <script src="@Url.Content("~/js/main.js")"></script>
+    <script>
+
+        var sanPhamDb = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
+            new
+            {
+                ma = Model.SanPhamID.ToString(),
+                ten = Model.TenSanPham,
+                hinh = Model.HinhAnh,
+                gia = Model.Gia,
+                loai = Model.DanhMuc != null ? Model.DanhMuc.MaLoai : "",
+                mota = Model.MoTa,
+                tonKho = Model.SoLuongTon,
+                thuongHieu = Model.ThuongHieu,
+                xuatXu = Model.XuatXu,
+                chatLieu = Model.ChatLieu,
+                kichThuoc = Model.KichThuoc,
+                baoHanh = Model.BaoHanh,
+                giaGoc = Model.GiaGoc,
+                dacDiem = Model.DacDiem,
+                chiTiet = Model.MoTaChiTiet,
+                gom = Model.ComboGom
+            },
+            new Newtonsoft.Json.JsonSerializerSettings
+            {
+                StringEscapeHandling = Newtonsoft.Json.StringEscapeHandling.EscapeHtml
+            }
+        ));
+
+        function tachDong(v) {
+            if (!v) return [];
+            return String(v).split(/\r?\n/).map(function (x) { return x.trim(); })
+                .filter(function (x) { return x.length > 0; });
+        }
+        var ma = sanPhamDb.ma;
+        var s = sanPhamDb;
+        s.ma = String(s.ma);
+        s.gia = Number(s.gia);
+        s.tonKho = Number(s.tonKho);
+        s.giaGoc = s.giaGoc == null ? null : Number(s.giaGoc);
+        s.dacDiem = tachDong(s.dacDiem);
+        s.chiTiet = tachDong(s.chiTiet);
+        s.gom = tachDong(s.gom);
+
+        function htm(t) {
+            return String(t == null ? "" : t).replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+        }
+        function giaTri(t) { return t ? htm(t) : "Chưa cập nhật"; }
+        function tenAnh(t) { return encodeURIComponent(String(t || "").split(/[\\/]/).pop()); }
+        var thuMucAnh = '@Url.Content("~/images/")';
+
+        var chiSo = SAN_PHAM.findIndex(function (x) { return String(x.ma) === s.ma; });
+        if (chiSo >= 0) SAN_PHAM[chiSo] = Object.assign({}, SAN_PHAM[chiSo], s);
+        else SAN_PHAM.push(Object.assign({ daBan: 0 }, s));
+        var DANH_GIA_MAU = [];
+
+        if (!s) {
+            document.getElementById("chiTiet").innerHTML = '<div class="hop-ct"><p>Không tìm thấy sản phẩm.</p><a class="nut" href="/san-pham.html">Về trang sản phẩm</a></div>';
+        } else {
+            document.title = s.ten + " - Gift Shop";
+            document.getElementById("duongTen").innerText = s.ten.toUpperCase();
+            var tenLoai = TEN_LOAI[s.loai] || "Sản phẩm";
+            document.getElementById("duongLoai").innerHTML = '<a href="' + (s.loai == "combo" ? "/combo.html" : "/san-pham.html?loai=" + encodeURIComponent(s.loai)) + '">' + htm(tenLoai.toUpperCase()) + '</a>';
+            veChiTiet();
+            veDanhGia();
+
+            var lq = [];
+            for (var i = 0; i < SAN_PHAM.length; i++)
+                if (SAN_PHAM[i].loai == s.loai && SAN_PHAM[i].ma != s.ma) lq.push(SAN_PHAM[i]);
+            if (lq.length == 0) lq = SAN_PHAM.filter(function (x) { return x.ma != s.ma; }).slice(0, 4);
+            veLienQuan(lq);
+        }
+
+        function veLienQuan(ds) {
+            var h = "";
+            ds.slice(0, 4).forEach(function (p) {
+                h += '<div class="sp-the"><a href="/Product/ChiTiet?ma=' +
+                    encodeURIComponent(p.ma) + '">' +
+                    '<div class="sp-anh"><img src="' + thuMucAnh + tenAnh(p.hinh) +
+                    '" alt="' + htm(p.ten) + '" /></div>' +
+                    '<div class="sp-ten">' + htm(p.ten) + '</div>' +
+                    '</a><small>Xem giá hiện tại</small></div>';
+            });
+            document.getElementById("lienQuan").innerHTML = h;
+        }
+
+        function veChiTiet() {
+            var ngay = new Date();
+            ngay.setDate(ngay.getDate() + 2);
+            var maHang = "GS" + ("000" + s.ma).slice(-4);
+
+            var dd = "";
+            for (var i = 0; i < s.dacDiem.length; i++) dd += "<li>" + htm(s.dacDiem[i]) + "</li>";
+            if (!dd) dd = "<li>Đang cập nhật đặc điểm sản phẩm.</li>";
+
+            var mt = "";
+            if (s.mota) mt += "<p>" + htm(s.mota) + "</p>";
+            for (var j = 0; j < s.chiTiet.length; j++) mt += "<p>" + htm(s.chiTiet[j]) + "</p>";
+            if (!mt) mt = "<p>Đang cập nhật mô tả sản phẩm.</p>";
+
+            var gom = "";
+            if (s.gom.length) {
+                gom = '<div class="hop-ct"><h3 class="tt-tieude">Combo gồm</h3><ul class="dac-diem">';
+                for (var k = 0; k < s.gom.length; k++) gom += "<li>" + htm(s.gom[k]) + "</li>";
+                gom += "</ul></div>";
+            }
+
+            document.getElementById("chiTiet").innerHTML =
+                '<div class="ct-wrap">' +
+                '<div class="ct-trai"><div class="ct-anh"><img src="' + thuMucAnh + tenAnh(s.hinh) + '" alt="' + htm(s.ten) + '" onerror="this.style.visibility=\'hidden\'" /></div>' +
+                '<div class="ct-cs"><b>Chính sách ưu đãi của Gift Shop</b><br>' +
+                '&#128666; Giao nhanh và uy tín<br>&#128260; Đổi trả miễn phí toàn quốc<br>&#127873; Ưu đãi khi mua số lượng lớn</div></div>' +
+
+                '<div class="ct-phai">' +
+                '<div class="hop-ct"><h1>' + htm(s.ten) + '</h1>' +
+                '<div class="ct-dong"><span>Thương hiệu: <b>' + giaTri(s.thuongHieu) + '</b></span><span>Xuất xứ: <b>' + giaTri(s.xuatXu) + '</b></span><span>Mã hàng: <b>' + maHang + '</b></span></div>' +
+                '<div class="ct-gia"><span class="gia-lon">' + dinhDang(s.gia) + '</span>' +
+                (s.giaGoc && s.giaGoc > s.gia ? '<span class="gia-cu">' + dinhDang(s.giaGoc) + '</span><span class="the-giam">-' + Math.round((1 - s.gia / s.giaGoc) * 100) + '%</span>' : '') + '</div>' +
+                '<div class="uudai"><span>FREESHIP đơn từ 250K</span><span>Mã GIFT10 giảm 10%</span><span>Đổi trả 7 ngày</span></div>' +
+                '<div class="ct-ship"><b>Thông tin vận chuyển</b><br>&#128666; Giao hàng tiêu chuẩn (thông tin tham khảo)<br>Dự kiến giao: <b>Liên hệ cửa hàng</b><br>Tình trạng: <b style="color:#1b7a3a">' + (s.tonKho > 0 ? ('Còn hàng (' + s.tonKho + ' sản phẩm)') : 'Hết hàng') + '</b></div>' +
+                '<div class="sl-chon"><b>Số lượng:</b><div class="sl-box"><button onclick="doiSo(-1)">-</button><input type="number" id="soLuong" value="1" min="1" /><button onclick="doiSo(1)">+</button></div></div>' +
+                '<div class="ct-nut"><button class="nut nut-vien" onclick="themTuChiTiet()">&#128722; Thêm vào giỏ hàng</button><button class="nut" onclick="muaNgay()">Mua ngay</button></div></div>' +
+
+                gom +
+
+                '<div class="hop-ct"><h3 class="tt-tieude">Thông tin chi tiết</h3><table class="bang-tt">' +
+                '<tr><td>Mã hàng</td><td>' + maHang + '</td></tr>' +
+                '<tr><td>Danh mục</td><td>' + htm(TEN_LOAI[s.loai] || 'Sản phẩm') + '</td></tr>' +
+                '<tr><td>Thương hiệu</td><td>' + giaTri(s.thuongHieu) + '</td></tr>' +
+                '<tr><td>Xuất xứ</td><td>' + giaTri(s.xuatXu) + '</td></tr>' +
+                '<tr><td>Chất liệu</td><td>' + giaTri(s.chatLieu) + '</td></tr>' +
+                '<tr><td>Kích thước</td><td>' + giaTri(s.kichThuoc) + '</td></tr>' +
+                '<tr><td>Bảo hành, đổi trả</td><td>' + giaTri(s.baoHanh) + '</td></tr></table></div>' +
+
+                '<div class="hop-ct"><h3 class="tt-tieude">Đặc điểm nổi bật</h3><ul class="dac-diem">' + dd + '</ul></div>' +
+                '<div class="hop-ct mo-ta-dai"><h3 class="tt-tieude">Mô tả sản phẩm</h3><p><b>' + htm(s.ten) + '</b></p>' + mt + '</div>' +
+                '<div class="hop-ct" id="khuDanhGia"></div>' +
+                '</div></div>';
+        }
+
+        function doiSo(d) {
+            var o = document.getElementById("soLuong");
+            var v = (parseInt(o.value) || 1) + d;
+            o.value = Math.max(1, Math.min(v, s.tonKho || 1));
+        }
+        function laySoLuong() {
+            var sl = parseInt(document.getElementById("soLuong").value);
+            return (isNaN(sl) || sl < 1) ? 1 : Math.min(sl, Math.max(1, s.tonKho));
+        }
+        function themTuChiTiet() {
+            if (s.tonKho < 1) { alert("Sản phẩm đã hết hàng"); return; }
+            themGio(s.ma, laySoLuong());
+        }
+        function muaNgay() {
+            if (s.tonKho < 1) { alert("Sản phẩm đã hết hàng"); return; }
+            themGio(s.ma, laySoLuong());
+            location.href = "/Cart/GioHang";
+        }
+
+        function layDanhGia() { return DANH_GIA_MAU.concat(doc("danhGia_" + s.ma, [])); }
+        function veDanhGia() {
+            var ds = layDanhGia(), tong = 0, h = "";
+            for (var i = 0; i < ds.length; i++) tong += ds[i].sao;
+            var tb = ds.length ? (tong / ds.length).toFixed(1) : "0.0";
+            for (var j = ds.length - 1; j >= 0; j--) {
+                h += '<div class="dg-mot"><b>' + an(ds[j].ten) + '</b><span class="sao">' + saoChu(ds[j].sao) + '</span> <small>' + ds[j].ngay + '</small><p>' + an(ds[j].nd) + '</p></div>';
+            }
+            document.getElementById("khuDanhGia").innerHTML =
+                '<h3 class="tt-tieude">Đánh giá minh họa</h3><p><small>Đánh giá mẫu từ giao diện nhóm; nhận xét bạn gửi chỉ lưu ở trình duyệt, chưa kết nối database.</small></p>' +
+                '<div class="dg-tong"><div class="diem">' + tb + '/5</div><div><div class="sao" style="font-size:22px">' + saoChu(tb) + '</div>' + ds.length + ' đánh giá</div></div>' +
+                h +
+                '<h3 style="margin-top:18px">Viết đánh giá của bạn</h3>' +
+                '<label>Số sao</label><select id="dgSao"><option value="5">5 sao</option><option value="4">4 sao</option><option value="3">3 sao</option><option value="2">2 sao</option><option value="1">1 sao</option></select>' +
+                '<label>Nhận xét</label><textarea id="dgNd" rows="3"></textarea>' +
+                '<button class="nut" onclick="guiDanhGia()">Gửi đánh giá</button>';
+        }
+        async function guiDanhGia() {
+            try {
+                var response = await fetch("/Account/TrangThai", { credentials: "same-origin" });
+                if (!response.ok) throw new Error("Không thể kiểm tra đăng nhập");
+                var u = await response.json();
+                if (!u.daDangNhap) {
+                    alert("Vui lòng đăng nhập để đánh giá");
+                    location.href = "/Account/DangNhap";
+                    return;
+                }
+                var nd = document.getElementById("dgNd").value.trim();
+                if (!nd) { alert("Vui lòng nhập nhận xét"); return; }
+                var ds = doc("danhGia_" + s.ma, []);
+                ds.push({ ten: u.hoTen, sao: parseInt(document.getElementById("dgSao").value), nd: nd, ngay: new Date().toLocaleDateString("vi-VN") });
+                ghi("danhGia_" + s.ma, ds);
+                veDanhGia();
+                hienThongBao("Đã lưu đánh giá trên trình duyệt này (chưa lưu SQL Server)");
+            } catch (error) {
+                console.error(error);
+                alert("Không kiểm tra được trạng thái đăng nhập");
+            }
+        }
+
+    </script>
+</body>
+</html>
